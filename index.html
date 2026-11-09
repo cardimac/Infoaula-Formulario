@@ -1,0 +1,1503 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Infoaula - Agenda da Aula do Seminário</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<style>
+  :root{
+    --ink:#00405a;
+    --black:#14141A;
+    --gold:#5fb4d6;
+    --gold-dim:#bfe0ee;
+    --cream:#f2f7fa;
+    --sand:#e4f0f5;
+    --white:#FFFFFF;
+    --muted:#5a6b78;
+    --line:#cfe0e8;
+    --sim:#2F6B4F;
+    --nao:#8A8F99;
+    --radius:10px;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0;
+    font-family:'Inter',sans-serif;
+    background:linear-gradient(180deg,#eef5f8,#e2edf2);
+    color:var(--ink);
+    padding:24px 14px 80px;
+  }
+  .app{
+    max-width:1180px;
+    margin:0 auto;
+    width:100%;
+  }
+  .app-header{
+    text-align:center;
+    margin-bottom:28px;
+  }
+  .app-header h1{
+    font-family:'Inter',sans-serif;
+    font-weight:700;
+    font-size:1.6rem;
+    margin:0 0 4px;
+    color:var(--ink);
+  }
+  .app-header p{
+    margin:0;
+    color:var(--muted);
+    font-size:0.92rem;
+  }
+  .layout{
+    display:grid;
+    grid-template-columns:minmax(280px,440px) 1fr;
+    gap:26px;
+    align-items:start;
+    min-width:0;
+  }
+  @media (max-width:920px){
+    .layout{grid-template-columns:1fr;}
+  }
+  .form-panel,
+  .preview-wrap{
+    min-width:0;
+  }
+
+  /* ---------- FORM ---------- */
+  .form-panel{
+    background:var(--white);
+    border:1px solid var(--line);
+    border-radius:var(--radius);
+    padding:18px;
+  }
+  .field-group{
+    margin-bottom:16px;
+  }
+  .field-group label{
+    display:block;
+    font-size:0.78rem;
+    font-weight:600;
+    color:var(--ink);
+    margin-bottom:5px;
+  }
+  .field-group input[type=text],
+  .field-group textarea,
+  .field-group select{
+    width:100%;
+    padding:9px 10px;
+    border:1px solid #D6D2C7;
+    border-radius:7px;
+    font-family:'Inter',sans-serif;
+    font-size:0.86rem;
+    color:var(--ink);
+    background:#FCFBF8;
+  }
+  .field-group textarea{
+    resize:vertical;
+    min-height:56px;
+    line-height:1.4;
+  }
+  .field-group input:focus,
+  .field-group textarea:focus,
+  .field-group select:focus{
+    outline:2px solid var(--gold);
+    outline-offset:1px;
+    background:#fff;
+  }
+  .two-col{
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:10px;
+  }
+  .agenda-fields-grid{
+    display:block;
+  }
+  .label-row{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:8px;
+    flex-wrap:wrap;
+    margin-bottom:5px;
+  }
+  .label-row label{margin:0 !important;}
+  .repeat-btn{
+    border:1px solid var(--gold);
+    background:var(--cream);
+    color:var(--ink);
+    border-radius:6px;
+    padding:4px 9px;
+    font-family:'Inter',sans-serif;
+    font-size:0.7rem;
+    font-weight:600;
+    cursor:pointer;
+    white-space:nowrap;
+  }
+  .repeat-btn:hover{background:var(--gold-dim);}
+  .repeat-btn.done{background:#DDF0E4;border-color:var(--sim);color:var(--sim);}
+  hr.sep{
+    border:none;
+    border-top:1px solid var(--line);
+    margin:18px 0;
+  }
+
+  .tabs{
+    display:flex;
+    gap:6px;
+    margin-bottom:16px;
+    flex-wrap:nowrap;
+  }
+  .tab-btn{
+    flex:1 1 0;
+    min-width:0;
+    padding:9px 4px;
+    border:1px solid var(--line);
+    background:var(--cream);
+    border-radius:7px;
+    font-family:'Inter',sans-serif;
+    font-weight:600;
+    font-size:0.8rem;
+    color:var(--ink);
+    cursor:pointer;
+    white-space:nowrap;
+    overflow:hidden;
+    text-overflow:ellipsis;
+  }
+  .tab-btn.active{
+    background:var(--ink);
+    color:var(--white);
+    border-color:var(--ink);
+  }
+  .day-panel{display:none;}
+  .day-panel.active{display:block;}
+
+  .sem-aula-row{
+    display:flex;
+    align-items:center;
+    gap:8px;
+    background:var(--sand);
+    padding:9px 10px;
+    border-radius:7px;
+    margin-bottom:14px;
+  }
+  .sem-aula-row label{
+    margin:0;
+    font-size:0.82rem;
+    font-weight:600;
+  }
+  .agenda-title{
+    font-family:'Inter',sans-serif;
+    font-weight:600;
+    font-size:0.95rem;
+    color:var(--ink);
+    margin:18px 0 10px;
+    padding-bottom:5px;
+    border-bottom:2px solid var(--gold);
+  }
+  .disabled-fields{opacity:0.4; pointer-events:none;}
+
+  .generate-btn{
+    width:100%;
+    padding:13px;
+    background:var(--ink);
+    color:var(--white);
+    border:none;
+    border-radius:7px;
+    font-family:'Inter',sans-serif;
+    font-weight:700;
+    font-size:0.95rem;
+    cursor:pointer;
+    margin-top:6px;
+  }
+  .generate-btn:hover{background:#005f7e;}
+
+  /* ---------- PREVIEW / POSTER ---------- */
+  .preview-wrap{
+    background:var(--white);
+    border:1px solid var(--line);
+    border-radius:var(--radius);
+    padding:16px;
+  }
+  .preview-label{
+    font-size:0.78rem;
+    font-weight:600;
+    color:var(--muted);
+    margin:0 0 10px;
+    text-transform:uppercase;
+    letter-spacing:0.04em;
+  }
+  .preview-scroll{
+    overflow-x:auto;
+    padding-bottom:6px;
+  }
+
+  #poster{
+    width:840px;
+    background:var(--cream);
+    font-family:'Inter',sans-serif;
+    color:var(--ink);
+  }
+  .poster-head{
+    background:var(--ink);
+    color:var(--white);
+    padding:30px 34px 26px;
+    text-align:center;
+    position:relative;
+  }
+  .poster-head h1{
+    font-family:'Inter',sans-serif;
+    font-weight:700;
+    font-size:2rem;
+    margin:0 0 8px;
+    letter-spacing:0.01em;
+  }
+  .poster-head .sub1{
+    font-size:0.86rem;
+    color:var(--gold-dim);
+    margin:0 0 2px;
+    font-weight:600;
+  }
+  .poster-head .sub2{
+    font-size:0.76rem;
+    color:#cfe8f1;
+    margin:0;
+  }
+  .poster-week{
+    background:var(--gold);
+    color:var(--black);
+    text-align:center;
+    padding:9px 10px;
+    font-weight:700;
+    font-size:1.35rem;
+    letter-spacing:0.02em;
+  }
+
+  /* ---------- BLOCOS VERTICAIS (por dia) ---------- */
+  .day-divider{
+    height:38px;
+    background:var(--sand);
+    border-top:4px solid var(--gold);
+    border-bottom:4px solid var(--gold);
+  }
+  .day-block{
+    background:var(--cream);
+    padding:0 0 30px;
+  }
+  .day-head{
+    display:flex;
+    align-items:center;
+    justify-content:flex-start;
+    gap:26px;
+    background:var(--ink);
+    border-left:14px solid var(--gold);
+    padding:20px 30px 20px 24px;
+    margin-bottom:24px;
+  }
+  .day-head .day-name{
+    font-family:'Inter',sans-serif;
+    font-weight:700;
+    font-size:2.5rem;
+    line-height:1.1;
+    color:var(--white);
+  }
+  .day-head .day-name span{
+    color:var(--gold-dim);
+    font-weight:600;
+  }
+  .day-head .day-date{
+    flex:none;
+    min-width:110px;
+    padding:10px 18px;
+    border-radius:10px;
+    background:var(--gold);
+    color:var(--black);
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    justify-content:center;
+    line-height:1;
+  }
+  .day-head .day-date small{
+    font-size:1.05rem;
+    font-weight:800;
+    letter-spacing:0.14em;
+    margin-bottom:4px;
+  }
+  .day-head .day-date b{
+    font-family:'Inter',sans-serif;
+    font-size:2.4rem;
+    font-weight:700;
+  }
+  .day-body{padding:0 30px;}
+
+  .sem-aula-banner{
+    background:var(--sand);
+    border:1px dashed #bcd3dd;
+    border-radius:8px;
+    padding:14px;
+    text-align:center;
+    color:var(--muted);
+    font-style:italic;
+    font-size:0.85rem;
+  }
+
+  .lesson-box{
+    background:var(--white);
+    border:1px solid var(--line);
+    border-left:4px solid var(--gold);
+    border-radius:6px;
+    padding:12px 14px;
+    margin-bottom:12px;
+  }
+  .lesson-box .k{font-size:0.95rem;font-weight:700;color:#00607f;letter-spacing:0.02em;margin-bottom:4px;}
+  .lesson-box .v{font-size:1.1rem;font-weight:400;line-height:1.4;color:var(--ink);white-space:pre-wrap;}
+
+  .agenda-label{font-family:'Inter',sans-serif;font-weight:700;font-size:1.3rem;color:var(--ink);margin:22px 0 10px;padding-left:10px;border-left:4px solid var(--gold);}
+
+  .agenda-num-list{
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:0 22px;
+    margin-bottom:4px;
+  }
+  .agenda-num-item{
+    display:flex;
+    align-items:center;
+    gap:10px;
+    padding:8px 0;
+    border-bottom:1px solid #e3eef3;
+  }
+  .agenda-num-item .num-badge{flex:0 0 30px;width:30px;height:30px;border-radius:50%;background:var(--gold);color:var(--black);font-weight:800;font-size:0.95rem;display:flex;align-items:center;justify-content:center;}
+  .agenda-num-item .content{
+    flex:1;
+    display:flex;
+    flex-direction:column;
+    gap:2px;
+    min-width:0;
+  }
+  .agenda-num-item .content .lbl{font-size:0.95rem;color:#5A5F6B;font-weight:700;}
+  .agenda-num-item .content .val{font-size:1.1rem;font-weight:400;color:var(--ink);text-align:left;word-break:break-word;line-height:1.35;}
+
+  .agenda-num-item .content .val.val-professor{color:#D32F2F;font-weight:700;font-size:1.25rem;}
+  .agenda-label-first{margin-top:4px;}
+  .agenda-label-info{
+    margin-top:18px;
+  }
+  .lesson-box-info{
+    border-left-color:#7fb8cc;
+  }
+
+  .atividade-pill{display:inline-block;font-size:1.7rem;font-weight:800;padding:4px 26px;border-radius:30px;background:var(--white);border:3px solid currentColor;white-space:nowrap;line-height:1.3;}
+  .pill-sim{color:#1B8A3E;}
+  .pill-nao{color:#D32F2F;}
+  .pill-vazio{color:#8A8F99;}
+
+  .atividade-box{
+    background:var(--gold-dim);
+    border:1px solid var(--gold);
+    border-left:4px solid var(--gold);
+    border-radius:6px;
+    padding:12px 14px;
+    margin-top:18px;
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:10px;
+  }
+  .atividade-box .k{font-size:1.3rem;font-weight:700;color:var(--black);letter-spacing:0.02em;}
+
+  .poster-footer{
+    text-align:center;
+    padding:16px 20px 24px;
+    font-size:0.7rem;
+    color:var(--muted);
+  }
+
+  .actions{
+    display:flex;
+    gap:10px;
+    margin-top:16px;
+    flex-wrap:wrap;
+  }
+  .actions button{
+    flex:1;
+    min-width:150px;
+    padding:12px;
+    border-radius:7px;
+    font-weight:700;
+    font-size:0.88rem;
+    cursor:pointer;
+    border:none;
+  }
+  #generateBtn{background:var(--ink); color:var(--white);}
+  #downloadBtn{background:var(--gold); color:var(--black);}
+  #shareBtn{background:#1FA855; color:var(--white);}
+  #shareOtherBtn{background:#3B5BA9; color:var(--white);}
+  .actions button:disabled{opacity:0.6;cursor:wait;}
+  .pdf-status{font-size:0.8rem;font-weight:600;color:var(--muted);text-align:center;margin:12px 0 0;min-height:1.2em;}
+  .pdf-status.ok{color:var(--sim);}
+  .share-panel{
+    display:none;
+    margin-top:14px;
+    background:var(--cream);
+    border:1px solid var(--gold);
+    border-radius:8px;
+    padding:14px;
+    font-size:0.82rem;
+    line-height:1.45;
+  }
+  .share-panel.show{display:block;}
+  .share-panel p{margin:0 0 10px;}
+  .share-links{display:flex;flex-wrap:wrap;gap:8px;}
+  .share-links a{
+    padding:8px 14px;
+    border-radius:6px;
+    background:var(--ink);
+    color:var(--white);
+    font-weight:600;
+    font-size:0.8rem;
+    text-decoration:none;
+  }
+  .hint{
+    font-size:0.76rem;
+    color:var(--muted);
+    margin-top:10px;
+    text-align:center;
+  }
+
+  /* ---------- BARRA DE FERRAMENTAS (Novo / Abrir / Salvar) ---------- */
+  .toolbar{
+    position:sticky;
+    top:0;
+    left:0;
+    z-index:200;
+    width:100vw;
+    margin-left:calc(50% - 50vw);
+    background:var(--ink);
+    box-shadow:0 2px 10px rgba(0,0,0,0.18);
+    margin-bottom:26px;
+  }
+  .toolbar-inner{
+    max-width:1180px;
+    margin:0 auto;
+    padding:10px 14px;
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:12px;
+    flex-wrap:wrap;
+  }
+  .toolbar-brand{
+    display:flex;
+    align-items:center;
+    gap:8px;
+    font-family:'Inter',sans-serif;
+    font-weight:600;
+    font-size:0.92rem;
+    color:var(--white);
+    white-space:nowrap;
+  }
+  .toolbar-brand .dot{
+    width:8px;
+    height:8px;
+    border-radius:50%;
+    background:var(--gold);
+    flex:none;
+  }
+  .toolbar-actions{
+    display:flex;
+    gap:8px;
+    flex-wrap:wrap;
+  }
+  .toolbar-btn{
+    display:flex;
+    align-items:center;
+    gap:6px;
+    padding:8px 13px;
+    border-radius:7px;
+    border:1px solid rgba(255,255,255,0.22);
+    background:rgba(255,255,255,0.06);
+    color:var(--white);
+    font-family:'Inter',sans-serif;
+    font-weight:600;
+    font-size:0.82rem;
+    cursor:pointer;
+    white-space:nowrap;
+  }
+  .toolbar-btn:hover{
+    background:rgba(255,255,255,0.15);
+  }
+  .toolbar-btn-primary{
+    background:var(--gold);
+    border-color:var(--gold);
+    color:var(--black);
+  }
+  .toolbar-btn-primary:hover{
+    background:var(--gold-dim);
+  }
+  .toolbar-status-row{
+    max-width:1180px;
+    margin:0 auto;
+    padding:0 14px 10px;
+  }
+  .toolbar-status{
+    font-size:0.76rem;
+    font-weight:600;
+    color:#cfe8f1;
+  }
+  .toolbar-status.status-unsaved{
+    color:var(--gold-dim);
+  }
+  .toolbar-status.status-saved{
+    color:#9FD8B8;
+  }
+  @media (max-width:600px){
+    .toolbar-inner{
+      justify-content:center;
+      text-align:center;
+    }
+    .toolbar-actions{
+      width:100%;
+      justify-content:stretch;
+    }
+    .toolbar-actions .toolbar-btn{
+      flex:1;
+      justify-content:center;
+    }
+    .toolbar-status-row{
+      text-align:center;
+    }
+  }
+
+  /* ---------- RESPONSIVO / CELULAR ---------- */
+  @media (max-width:600px){
+    body{
+      padding:16px 10px 60px;
+    }
+    .app-header{
+      margin-bottom:20px;
+    }
+    .app-header h1{
+      font-size:1.25rem;
+    }
+    .app-header p{
+      font-size:0.82rem;
+    }
+    .form-panel,
+    .preview-wrap{
+      padding:14px;
+    }
+    .two-col{
+      grid-template-columns:1fr;
+      gap:12px;
+    }
+    .tabs{
+      gap:5px;
+    }
+    .tab-btn{
+      min-width:0;
+      padding:9px 4px;
+      font-size:0.74rem;
+    }
+    .actions{
+      flex-direction:column;
+    }
+    .actions button{
+      min-width:100%;
+      width:100%;
+    }
+    .field-group input[type=text],
+    .field-group textarea,
+    .field-group select{
+      font-size:0.92rem;
+    }
+  }
+
+  .app-credit{ margin:0 0 6px; font-size:.78rem; color:var(--muted); }
+  .poster-head .sub3{ font-size:.72rem; color:#cfe8f1; margin:6px 0 0; }
+  .label-row{ flex-wrap:wrap; }
+
+  /* ---------- Responsivo: tablet ---------- */
+  @media (min-width:601px) and (max-width:920px){
+    .app{ max-width:100%; }
+    .toolbar-inner{ padding:10px 22px; }
+    .preview-wrap{ padding:14px; }
+  }
+
+  /* ---------- Responsivo: celular ---------- */
+  @media (max-width:600px){
+    .toolbar-brand{ white-space:normal; font-size:0.86rem; }
+    .toolbar-btn{ padding:8px 10px; font-size:0.78rem; }
+    .form-panel{ padding:14px; }
+    .sem-aula-row{ flex-wrap:wrap; }
+    .label-row{ flex-direction:column; align-items:flex-start; gap:6px; }
+    .repeat-btn{ align-self:flex-start; }
+    .field-group input[type=text], .field-group input[type=date],
+    .field-group textarea, .field-group select{ font-size:16px; } /* evita zoom automático no iOS */
+    .atividade-box{ flex-wrap:wrap; }
+    .preview-wrap{ padding:12px; }
+    /* A pré-visualização mantém a largura do PDF (840 px) e rola na horizontal;
+       o PDF gerado não é afetado. */
+    .preview-scroll{ -webkit-overflow-scrolling:touch; }
+  }
+</style>
+
+</head>
+<body>
+
+<div class="toolbar">
+  <div class="toolbar-inner">
+    <div class="toolbar-brand"><span class="dot"></span>Infoaula - Agenda da Aula</div>
+    <div class="toolbar-actions">
+      <button type="button" id="btnNovo" class="toolbar-btn" title="Começar um formulário em branco">🗋 Novo</button>
+      <button type="button" id="btnAbrir" class="toolbar-btn" title="Abrir um arquivo salvo anteriormente (.json)">📂 Abrir</button>
+      <button type="button" id="btnSalvar" class="toolbar-btn toolbar-btn-primary" title="Salvar o preenchimento atual em um arquivo no seu computador ou celular">💾 Salvar</button>
+      <input type="file" id="fileInput" accept="application/json,.json" style="display:none">
+    </div>
+  </div>
+  <div class="toolbar-status-row">
+    <span class="toolbar-status" id="toolbarStatus">Nenhuma alteração ainda</span>
+  </div>
+</div>
+
+<div class="app">
+
+  <div class="app-header">
+    <h1>Infoaula - Agenda da Aula do Seminário</h1>
+    <p class="app-credit">Desenvolvido por Alexandre C. Cardim, versão de 07.11.2026</p>
+    <p>Preencha os campos e gere o PDF para compartilhar no WhatsApp ou em outras redes — use "Salvar" no menu acima para continuar depois</p>
+  </div>
+
+  <div class="layout">
+
+    <!-- ===================== FORM ===================== -->
+    <div class="form-panel">
+
+      <div class="field-group">
+        <label for="tituloClasse">Nome da(s) Classe(s) / Alas</label>
+        <input type="text" id="tituloClasse" value="" placeholder="Ex: Classe de Seminário das Alas....">
+      </div>
+      <div class="field-group">
+        <label for="tituloEstaca">Estaca / Organização</label>
+        <input type="text" id="tituloEstaca" value="" placeholder="Ex: Estaca Pirituba">
+      </div>
+      <div class="field-group">
+        <label>Semana (período)</label>
+        <div class="two-col">
+          <div>
+            <label for="semanaInicio" style="font-weight:400;font-size:0.72rem;color:var(--muted);">Início</label>
+            <input type="date" id="semanaInicio">
+          </div>
+          <div>
+            <label for="semanaFim" style="font-weight:400;font-size:0.72rem;color:var(--muted);">Fim</label>
+            <input type="date" id="semanaFim">
+          </div>
+        </div>
+      </div>
+
+      <hr class="sep">
+
+      <div class="tabs" id="tabs"></div>
+
+      <div id="dayForms"></div>
+    </div>
+
+    <!-- ===================== PREVIEW ===================== -->
+    <div class="preview-wrap">
+      <p class="preview-label">Pré-visualização</p>
+      <div class="preview-scroll">
+        <div id="poster"></div>
+      </div>
+
+      <div class="actions">
+        <button id="generateBtn">Gerar PDF</button>
+        <button id="downloadBtn">Baixar PDF</button>
+        <button id="shareBtn">Compartilhar no WhatsApp</button>
+        <button id="shareOtherBtn">Compartilhar em outras redes</button>
+      </div>
+      <p class="pdf-status" id="pdfStatus"></p>
+      <div class="share-panel" id="sharePanel">
+        <p><strong>O PDF foi baixado no seu aparelho.</strong> Seu navegador não permite enviar o arquivo direto para os aplicativos. Abra a rede social desejada (Instagram, Facebook, Telegram, WhatsApp, e-mail…) e anexe o arquivo PDF baixado. Atalhos para abrir a conversa:</p>
+        <div class="share-links" id="shareLinks"></div>
+      </div>
+      <p class="hint">O PDF é gerado na vertical, com cada dia da semana em uma página. No celular, os botões de compartilhar abrem a lista de aplicativos do aparelho (WhatsApp, Instagram, Telegram, Facebook, e-mail, etc.) já com o PDF anexado.</p>
+    </div>
+
+  </div>
+</div>
+
+<script>
+const DAYS = [
+  {key:'terca',   name:'Terça',   num:'1'},
+  {key:'quarta',  name:'Quarta',  num:'2'},
+  {key:'quinta',  name:'Quinta',  num:'3'},
+  {key:'sexta',   name:'Sexta',   num:'4'}
+];
+
+// Sequência numerada da agenda da aula (a ordem em que as partes acontecem)
+const AGENDA_NUMBERED = [
+  {key:'boasVindas', label:'Boas Vindas'},
+  {key:'regente', label:'Regente'},
+  {key:'pianista', label:'Pianista'},
+  {key:'hinoAbertura', label:'Hino de Abertura'},
+  {key:'oracaoAbertura', label:'Oração de Abertura'},
+  {key:'pensamento', label:'Pensamento'},
+  {key:'dominioDoutrinario', label:'Domínio Doutrinário'},
+  {key:'relembrarAula', label:'Relembrar Aula Passada'},
+  {key:'alunoLicao', label:'Parte da Lição Ensinada Pelo Aluno'},
+  {key:'professor', label:'Professor'},
+  {key:'oracaoEncerramento', label:'Oração de Encerramento'}
+];
+
+// Itens informativos da agenda — não fazem parte da sequência numerada
+const AGENDA_INFO = [
+  {key:'escrituraDominio', label:'Escritura do Domínio Doutrinário', textarea:false},
+  {key:'temaLicaoAluno', label:'Tema da Lição do Aluno', textarea:true}
+];
+
+const AGENDA_FIELDS = AGENDA_NUMBERED.concat(AGENDA_INFO);
+
+// All fields start empty — the person fills everything in themselves
+const EMPTY_DAY = {
+  semAula:false,
+  temaLicao:'', numeroLicao:'', designacaoEstudo:'', proposito:'', tipoLicao:'', tarefas:'',
+  boasVindas:'', regente:'', pianista:'', hinoAbertura:'', oracaoAbertura:'',
+  pensamento:'', dominioDoutrinario:'', escrituraDominio:'', relembrarAula:'',
+  alunoLicao:'', temaLicaoAluno:'', professor:'', oracaoEncerramento:'',
+  atividade:''
+};
+const DEFAULT_DATA = {
+  terca:  Object.assign({}, EMPTY_DAY),
+  quarta: Object.assign({}, EMPTY_DAY),
+  quinta: Object.assign({}, EMPTY_DAY),
+  sexta:  Object.assign({}, EMPTY_DAY)
+};
+
+let cachedPdf = null;   // {blob, filename}
+let pdfBusy = false;
+
+function fieldId(dayKey, field){ return dayKey + '_' + field; }
+
+/* ==================================================================
+   SALVAR / ABRIR — permite guardar o preenchimento em um arquivo
+   e continuar depois, mesmo fechando a aba ou trocando de aparelho.
+   ================================================================== */
+let hasUnsavedChanges = false;
+
+function updateToolbarStatus(kind, extra){
+  const el = document.getElementById('toolbarStatus');
+  if(!el) return;
+  const hora = new Date().toLocaleTimeString('pt-BR', {hour:'2-digit', minute:'2-digit'});
+  if(kind==='salvo'){
+    el.textContent = `✔ Salvo às ${hora}`;
+    el.className = 'toolbar-status status-saved';
+  } else if(kind==='aberto'){
+    el.textContent = `✔ Arquivo aberto: ${extra}`;
+    el.className = 'toolbar-status status-saved';
+  } else if(kind==='novo'){
+    el.textContent = 'Formulário novo em branco';
+    el.className = 'toolbar-status status-saved';
+  } else if(kind==='alterado'){
+    el.textContent = 'Alterações não salvas — clique em "Salvar" para não perder o que já foi preenchido';
+    el.className = 'toolbar-status status-unsaved';
+  } else {
+    el.textContent = 'Nenhuma alteração ainda';
+    el.className = 'toolbar-status';
+  }
+}
+
+function markDirty(){
+  hasUnsavedChanges = true;
+  updateToolbarStatus('alterado');
+}
+
+function onFormChange(){
+  updatePreview();
+  markDirty();
+}
+
+// Reúne TODOS os valores digitados no formulário (mesmo os de dias
+// marcados como "sem aula", para não perder nada se a pessoa desmarcar depois).
+function collectFormState(){
+  const state = {
+    _tipo: 'infoaula-seminario-rascunho',
+    _versao: 1,
+    _salvoEm: new Date().toISOString(),
+    tituloClasse: document.getElementById('tituloClasse').value,
+    tituloEstaca: document.getElementById('tituloEstaca').value,
+    semanaInicio: document.getElementById('semanaInicio').value,
+    semanaFim: document.getElementById('semanaFim').value,
+    dias: {}
+  };
+  DAYS.forEach(day=>{
+    const d = { semAula: document.getElementById(fieldId(day.key,'semAula')).checked };
+    d.temaLicao = document.getElementById(fieldId(day.key,'temaLicao')).value;
+    d.numeroLicao = document.getElementById(fieldId(day.key,'numeroLicao')).value;
+    d.proposito = document.getElementById(fieldId(day.key,'proposito')).value;
+    d.tipoLicao = document.getElementById(fieldId(day.key,'tipoLicao')).value;
+    d.designacaoEstudo = document.getElementById(fieldId(day.key,'designacaoEstudo')).value;
+    d.tarefas = document.getElementById(fieldId(day.key,'tarefas')).value;
+    d.modalidade = document.getElementById(fieldId(day.key,'modalidade')).value;
+    AGENDA_FIELDS.forEach(f=>{
+      d[f.key] = document.getElementById(fieldId(day.key,f.key)).value;
+    });
+    d.atividade = document.getElementById(fieldId(day.key,'atividade')).value;
+    state.dias[day.key] = d;
+  });
+  return state;
+}
+
+// Preenche o formulário inteiro a partir de um estado salvo anteriormente.
+function loadFormState(state){
+  state = state || {};
+  document.getElementById('tituloClasse').value = state.tituloClasse || '';
+  document.getElementById('tituloEstaca').value = state.tituloEstaca || '';
+  document.getElementById('semanaInicio').value = state.semanaInicio || '';
+  document.getElementById('semanaFim').value = state.semanaFim || '';
+
+  DAYS.forEach(day=>{
+    const d = (state.dias && state.dias[day.key]) || {};
+    const setVal = (field, val)=>{
+      const el = document.getElementById(fieldId(day.key, field));
+      if(el) el.value = val || '';
+    };
+    document.getElementById(fieldId(day.key,'semAula')).checked = !!d.semAula;
+    setVal('temaLicao', d.temaLicao);
+    setVal('numeroLicao', d.numeroLicao);
+    setVal('proposito', d.proposito);
+    setVal('tipoLicao', d.tipoLicao);
+    setVal('designacaoEstudo', d.designacaoEstudo);
+    setVal('tarefas', d.tarefas);
+    setVal('modalidade', d.modalidade);
+    AGENDA_FIELDS.forEach(f=> setVal(f.key, d[f.key]));
+    setVal('atividade', d.atividade);
+
+    const container = document.getElementById('container_'+day.key);
+    if(container) container.classList.toggle('disabled-fields', !!d.semAula);
+  });
+
+  updatePreview();
+}
+
+function baixarEstadoComoArquivo(){
+  const state = collectFormState();
+  const blob = new Blob([JSON.stringify(state, null, 2)], {type:'application/json'});
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement('a');
+  const semana = document.getElementById('semanaInicio').value || 'sem-data';
+  link.download = `infoaula-rascunho-${semana}.json`;
+  link.href = url;
+  link.click();
+  URL.revokeObjectURL(url);
+  hasUnsavedChanges = false;
+  updateToolbarStatus('salvo');
+}
+
+function abrirArquivoSalvo(file){
+  const reader = new FileReader();
+  reader.onload = (ev)=>{
+    try{
+      const state = JSON.parse(ev.target.result);
+      loadFormState(state);
+      hasUnsavedChanges = false;
+      updateToolbarStatus('aberto', file.name);
+    }catch(err){
+      alert('Não foi possível abrir este arquivo. Verifique se é um arquivo .json salvo por este mesmo formulário (usando o botão "Salvar").');
+    }
+  };
+  reader.readAsText(file);
+}
+
+
+function buildTabs(){
+  const tabsEl = document.getElementById('tabs');
+  DAYS.forEach((d,i)=>{
+    const btn = document.createElement('button');
+    btn.type='button';
+    btn.className='tab-btn' + (i===0 ? ' active':'');
+    btn.textContent = d.name;
+    btn.dataset.day = d.key;
+    btn.addEventListener('click', ()=>{
+      document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
+      document.querySelectorAll('.day-panel').forEach(p=>p.classList.remove('active'));
+      btn.classList.add('active');
+      document.getElementById('panel_'+d.key).classList.add('active');
+    });
+    tabsEl.appendChild(btn);
+  });
+}
+
+function buildDayForm(day){
+  const data = DEFAULT_DATA[day.key];
+  const panel = document.createElement('div');
+  panel.className = 'day-panel' + (day.key==='terca' ? ' active':'');
+  panel.id = 'panel_'+day.key;
+
+  panel.innerHTML = `
+    <div class="sem-aula-row">
+      <input type="checkbox" id="${fieldId(day.key,'semAula')}" ${data.semAula ? 'checked':''}>
+      <label for="${fieldId(day.key,'semAula')}">${day.name}-feira sem aula</label>
+    </div>
+
+    <div class="fields-container ${data.semAula ? 'disabled-fields':''}" id="container_${day.key}">
+      <div class="field-group">
+        <label>Modalidade</label>
+        <select id="${fieldId(day.key,'modalidade')}">
+          <option value="" ${!data.modalidade?'selected':''}>Selecione</option>
+          <option value="Presencial" ${data.modalidade==='Presencial'?'selected':''}>Presencial</option>
+          <option value="Remota" ${data.modalidade==='Remota'?'selected':''}>Remota</option>
+          <option value="Online" ${data.modalidade==='Online'?'selected':''}>Online</option>
+        </select>
+      </div>
+
+      <div class="agenda-title" style="margin-top:4px;">Informações da Lição</div>
+      <div class="field-group">
+        <label>Tema da Lição</label>
+        <input type="text" id="${fieldId(day.key,'temaLicao')}" value="${(data.temaLicao||'').replace(/"/g,'&quot;')}">
+      </div>
+      <div class="field-group">
+        <label>Número da Lição</label>
+        <input type="text" id="${fieldId(day.key,'numeroLicao')}" value="${(data.numeroLicao||'').replace(/"/g,'&quot;')}">
+      </div>
+      <div class="field-group">
+        <label>Propósito da Lição</label>
+        <textarea id="${fieldId(day.key,'proposito')}">${data.proposito||''}</textarea>
+      </div>
+      <div class="field-group">
+        <label>Tipo de Lição</label>
+        <select id="${fieldId(day.key,'tipoLicao')}">
+          <option value="" ${!data.tipoLicao?'selected':''}>Selecione</option>
+          <option value="Lição das Escrituras" ${data.tipoLicao==='Lição das Escrituras'?'selected':''}>Lição das Escrituras</option>
+          <option value="Lição de prática de domínio doutrinário" ${data.tipoLicao==='Lição de prática de domínio doutrinário'?'selected':''}>Lição de prática de domínio doutrinário</option>
+          <option value="Lição de avaliação de aprendizado" ${data.tipoLicao==='Lição de avaliação de aprendizado'?'selected':''}>Lição de avaliação de aprendizado</option>
+          <option value="Lição de preparação para a vida" ${data.tipoLicao==='Lição de preparação para a vida'?'selected':''}>Lição de preparação para a vida</option>
+        </select>
+      </div>
+      <div class="field-group">
+        <label>Designação de Estudo</label>
+        <textarea id="${fieldId(day.key,'designacaoEstudo')}">${data.designacaoEstudo||''}</textarea>
+      </div>
+      <div class="field-group">
+        <label>Preparação do Aluno</label>
+        <textarea id="${fieldId(day.key,'tarefas')}">${data.tarefas||''}</textarea>
+      </div>
+
+      <div class="agenda-title">Agenda da Aula (sequência)</div>
+
+      <div class="agenda-fields-grid">
+        ${AGENDA_NUMBERED.map((f,i)=>`
+          <div class="field-group">
+            <div class="label-row"><label>${i+1}. ${f.label}</label><button type="button" class="repeat-btn" data-day="${day.key}" data-field="${f.key}" title="Copiar este campo para os outros dias da semana">↻ Repetir na semana</button></div>
+            <input type="text" id="${fieldId(day.key,f.key)}" value="${(data[f.key]||'').replace(/"/g,'&quot;')}">
+          </div>
+        `).join('')}
+      </div>
+
+      <div class="agenda-title">Complemento da Agenda</div>
+
+      ${AGENDA_INFO.map(f=>`
+        <div class="field-group">
+          <div class="label-row"><label>${f.label}</label><button type="button" class="repeat-btn" data-day="${day.key}" data-field="${f.key}" title="Copiar este campo para os outros dias da semana">↻ Repetir na semana</button></div>
+          ${f.textarea
+            ? `<textarea id="${fieldId(day.key,f.key)}">${data[f.key]||''}</textarea>`
+            : `<input type="text" id="${fieldId(day.key,f.key)}" value="${(data[f.key]||'').replace(/"/g,'&quot;')}">`
+          }
+        </div>
+      `).join('')}
+
+      <div class="field-group">
+        <div class="label-row"><label>Atividade</label><button type="button" class="repeat-btn" data-day="${day.key}" data-field="atividade" title="Copiar este campo para os outros dias da semana">↻ Repetir na semana</button></div>
+        <select id="${fieldId(day.key,'atividade')}">
+          <option value="" ${!data.atividade?'selected':''}>Selecione</option>
+          <option value="Não" ${data.atividade==='Não'?'selected':''}>Não</option>
+          <option value="Sim" ${data.atividade==='Sim'?'selected':''}>Sim</option>
+        </select>
+      </div>
+    </div>
+  `;
+  return panel;
+}
+
+function collectDayData(day){
+  const semAula = document.getElementById(fieldId(day.key,'semAula')).checked;
+  const out = { semAula };
+  if(!semAula){
+    out.temaLicao = document.getElementById(fieldId(day.key,'temaLicao')).value;
+    out.numeroLicao = document.getElementById(fieldId(day.key,'numeroLicao')).value;
+    out.proposito = document.getElementById(fieldId(day.key,'proposito')).value;
+    out.tipoLicao = document.getElementById(fieldId(day.key,'tipoLicao')).value;
+    out.designacaoEstudo = document.getElementById(fieldId(day.key,'designacaoEstudo')).value;
+    out.tarefas = document.getElementById(fieldId(day.key,'tarefas')).value;
+    out.modalidade = document.getElementById(fieldId(day.key,'modalidade')).value;
+    AGENDA_FIELDS.forEach(f=>{
+      out[f.key] = document.getElementById(fieldId(day.key,f.key)).value;
+    });
+    out.atividade = document.getElementById(fieldId(day.key,'atividade')).value;
+  }
+  return out;
+}
+
+const MONTH_NAMES = ['janeiro','fevereiro','março','abril','maio','junho','julho','agosto','setembro','outubro','novembro','dezembro'];
+
+function formatWeekRange(startVal, endVal){
+  const parse = (v)=> v ? new Date(v+'T00:00:00') : null;
+  const start = parse(startVal);
+  const end = parse(endVal);
+  const fmtFull = (d)=> `${d.getDate()} de ${MONTH_NAMES[d.getMonth()]} de ${d.getFullYear()}`;
+
+  if(!start && !end) return '';
+  if(start && !end) return fmtFull(start);
+  if(!start && end) return fmtFull(end);
+
+  if(start.getFullYear()===end.getFullYear() && start.getMonth()===end.getMonth()){
+    return `${start.getDate()} a ${end.getDate()} de ${MONTH_NAMES[end.getMonth()]} de ${end.getFullYear()}`;
+  }
+  if(start.getFullYear()===end.getFullYear()){
+    return `${start.getDate()} de ${MONTH_NAMES[start.getMonth()]} a ${end.getDate()} de ${MONTH_NAMES[end.getMonth()]} de ${end.getFullYear()}`;
+  }
+  return `${fmtFull(start)} a ${fmtFull(end)}`;
+}
+
+// Calcula o dia do mês (número) de cada dia da semana (terça a sexta)
+// a partir da data de Início selecionada no formulário.
+function getDayNumbers(startVal){
+  if(!startVal) return DAYS.map(d=> d.num); // sem data selecionada: mantém os números padrão
+  const start = new Date(startVal+'T00:00:00');
+  if(isNaN(start.getTime())) return DAYS.map(d=> d.num);
+  return DAYS.map((d,i)=>{
+    const dt = new Date(start);
+    dt.setDate(start.getDate()+i);
+    return String(dt.getDate());
+  });
+}
+
+function collectAll(){
+  const dayNumbers = getDayNumbers(document.getElementById('semanaInicio').value);
+  return {
+    tituloClasse: document.getElementById('tituloClasse').value,
+    tituloEstaca: document.getElementById('tituloEstaca').value,
+    semanaPeriodo: formatWeekRange(
+      document.getElementById('semanaInicio').value,
+      document.getElementById('semanaFim').value
+    ),
+    days: DAYS.map((d,i)=>({ meta:Object.assign({}, d, {num: dayNumbers[i]}), data:collectDayData(d) }))
+  };
+}
+
+function esc(str){
+  if(!str) return '';
+  const div = document.createElement('div');
+  div.textContent = str;
+  return div.innerHTML;
+}
+
+// Campos simples exibidos como uma linha da tabela (rótulo + um valor por dia)
+function renderNumberedItem(num, label, value, valClass){
+  return `<div class="agenda-num-item">
+    <span class="num-badge">${num}</span>
+    <span class="content">
+      <span class="lbl">${esc(label)}</span>
+      <span class="val ${valClass||''}">${esc(value) || '—'}</span>
+    </span>
+  </div>`;
+}
+
+function renderInfoItem(label, value){
+  return `<div class="lesson-box lesson-box-info">
+    <div class="k">${esc(label)}</div>
+    <div class="v">${esc(value) || '—'}</div>
+  </div>`;
+}
+
+function renderPoster(state){
+  const poster = document.getElementById('poster');
+
+  let daysHtml = '';
+  state.days.forEach(({meta, data}, idx)=>{
+    const divider = idx>0 ? '<div class="day-divider"></div>' : '';
+    const headHtml = `<div class="day-head">
+            <div class="day-name">${meta.name}<span>-feira</span></div>
+            <div class="day-date"><small>DIA</small><b>${meta.num}</b></div>
+          </div>`;
+    if(data.semAula){
+      daysHtml += `${divider}
+        <div class="day-block">
+          ${headHtml}
+          <div class="day-body"><div class="sem-aula-banner">Sem aula neste dia</div></div>
+        </div>`;
+      return;
+    }
+
+    const agendaNumbered = AGENDA_NUMBERED
+      .map((f,i)=>renderNumberedItem(i+1, f.label, data[f.key], f.key==='professor' ? 'val-professor' : '')).join('');
+    const agendaInfo = AGENDA_INFO
+      .map(f=>renderInfoItem(f.label, data[f.key])).join('');
+
+    const pillClass = data.atividade === 'Sim' ? 'pill-sim' : data.atividade === 'Não' ? 'pill-nao' : 'pill-vazio';
+    const pillText = data.atividade === 'Sim' ? 'Sim'
+      : data.atividade === 'Não' ? 'Não' : '—';
+
+    daysHtml += `${divider}
+      <div class="day-block">
+        ${headHtml}
+        <div class="day-body">
+        <div class="lesson-box">
+          <div class="k">Modalidade</div>
+          <div class="v">${esc(data.modalidade) || '—'}</div>
+        </div>
+        <div class="agenda-label agenda-label-first">Informações da Lição</div>
+        <div class="lesson-box">
+          <div class="k">Tema da Lição</div>
+          <div class="v">${esc(data.temaLicao) || '—'}</div>
+        </div>
+        <div class="lesson-box">
+          <div class="k">Número da Lição</div>
+          <div class="v">${esc(data.numeroLicao) || '—'}</div>
+        </div>
+        <div class="lesson-box">
+          <div class="k">Propósito da Lição</div>
+          <div class="v">${esc(data.proposito) || '—'}</div>
+        </div>
+        <div class="lesson-box">
+          <div class="k">Tipo de Lição</div>
+          <div class="v">${esc(data.tipoLicao) || '—'}</div>
+        </div>
+        <div class="lesson-box">
+          <div class="k">Designação de Estudo</div>
+          <div class="v">${esc(data.designacaoEstudo) || '—'}</div>
+        </div>
+        <div class="lesson-box">
+          <div class="k">Preparação do Aluno</div>
+          <div class="v">${esc(data.tarefas) || '—'}</div>
+        </div>
+
+        <div class="agenda-label">Agenda da Aula</div>
+        <div class="agenda-num-list">${agendaNumbered}</div>
+
+        <div class="agenda-label agenda-label-info">Complemento da Agenda</div>
+        ${agendaInfo}
+
+        <div class="atividade-box">
+          <span class="k">Atividade</span>
+          <span class="atividade-pill ${pillClass}">${pillText}</span>
+        </div>
+        </div>
+      </div>`;
+  });
+
+  poster.innerHTML = `
+    <div class="poster-top">
+      <div class="poster-head">
+        <h1>Infoaula - Agenda da Aula do Seminário</h1>
+        <p class="sub1">${esc(state.tituloClasse)}</p>
+        <p class="sub2">${esc(state.tituloEstaca)}</p>        <p class="sub3">Desenvolvido por Alexandre C. Cardim, versão de 07.11.2026</p>
+      </div>
+      <div class="poster-week">Semana: ${esc(state.semanaPeriodo)}</div>
+    </div>
+    <div style="height:24px"></div>
+    ${daysHtml}
+    <div class="poster-footer">Gerado pelo formulário Infoaula - Agenda da Aula do Seminário</div>
+  `;
+}
+
+function updatePreview(){
+  cachedPdf = null; // o conteúdo mudou: o PDF anterior não vale mais
+  renderPoster(collectAll());
+}
+
+function repeatFieldToWeek(fromDay, field, btn){
+  const src = document.getElementById(fieldId(fromDay, field));
+  if(!src) return;
+  const value = src.value;
+  const others = DAYS.filter(d=> d.key!==fromDay);
+  const wouldOverwrite = others.some(d=>{
+    const el = document.getElementById(fieldId(d.key, field));
+    return el && el.value && el.value!==value;
+  });
+  if(wouldOverwrite && !confirm('Alguns outros dias já têm informação neste campo. Deseja substituir pelo valor deste dia?')) return;
+  others.forEach(d=>{
+    const el = document.getElementById(fieldId(d.key, field));
+    if(el) el.value = value;
+  });
+  onFormChange();
+  if(btn){
+    const old = btn.textContent;
+    btn.textContent = '✔ Repetido';
+    btn.classList.add('done');
+    setTimeout(()=>{ btn.textContent = old; btn.classList.remove('done'); }, 1500);
+  }
+}
+function attachLiveListeners(){
+  document.getElementById('dayForms').addEventListener('click', (e)=>{
+    const btn = e.target.closest('.repeat-btn');
+    if(btn) repeatFieldToWeek(btn.dataset.day, btn.dataset.field, btn);
+  });
+  document.getElementById('tituloClasse').addEventListener('input', onFormChange);
+  document.getElementById('tituloEstaca').addEventListener('input', onFormChange);
+  document.getElementById('semanaInicio').addEventListener('input', onFormChange);
+  document.getElementById('semanaFim').addEventListener('input', onFormChange);
+  DAYS.forEach(day=>{
+    document.getElementById(fieldId(day.key,'semAula')).addEventListener('change', (e)=>{
+      const container = document.getElementById('container_'+day.key);
+      container.classList.toggle('disabled-fields', e.target.checked);
+      onFormChange();
+    });
+    const container = document.getElementById('container_'+day.key);
+    container.addEventListener('input', onFormChange);
+    container.addEventListener('change', onFormChange);
+  });
+}
+
+function init(){
+  buildTabs();
+  const dayForms = document.getElementById('dayForms');
+  DAYS.forEach(d=> dayForms.appendChild(buildDayForm(d)));
+  attachLiveListeners();
+  updatePreview();
+}
+init();
+
+function setPdfStatus(msg, ok){
+  const el = document.getElementById('pdfStatus');
+  el.textContent = msg || '';
+  el.className = 'pdf-status' + (ok ? ' ok' : '');
+}
+
+// Captura um pedaço do pôster em alta resolução (respeitando o limite de
+// área de canvas dos navegadores móveis).
+async function captureEl(el){
+  const w = Math.ceil(el.getBoundingClientRect().width);
+  const h = Math.ceil(el.getBoundingClientRect().height);
+  const MAX_AREA = 16000000;
+  const scale = Math.max(1.5, Math.min(3, Math.sqrt(MAX_AREA / (w*h))));
+  const canvas = await html2canvas(el, {
+    scale: scale,
+    backgroundColor: '#f2f7fa',
+    useCORS: true,
+    logging: false,
+    imageTimeout: 15000
+  });
+  return {canvas, w, h};
+}
+
+// Nome do arquivo: "Infoaula <Classe> <período>.pdf"
+// Ex.: Infoaula São Domingos 13 a 16 de Outubro de 2026.pdf
+function buildFilename(){
+  const classe = document.getElementById('tituloClasse').value;
+  let periodo = formatWeekRange(
+    document.getElementById('semanaInicio').value,
+    document.getElementById('semanaFim').value
+  );
+  // meses com inicial maiúscula
+  MONTH_NAMES.forEach(m=>{
+    const cap = m.charAt(0).toUpperCase() + m.slice(1);
+    periodo = periodo.replace(new RegExp('\\b'+m+'\\b','g'), cap);
+  });
+  const clean = (t)=> t.replace(/[\\/:*?"<>|]+/g,' ').replace(/\s+/g,' ').trim();
+  const nome = ['Infoaula', clean(classe), clean(periodo)].filter(Boolean).join(' ');
+  return nome + '.pdf';
+}
+
+// Monta o PDF: uma página por dia (a primeira leva o cabeçalho da semana).
+// Cada página tem a altura exata do conteúdo, então nada é cortado no meio.
+async function buildPdf(){
+  updatePreview();
+  if(document.fonts && document.fonts.ready){
+    try{ await document.fonts.ready; }catch(e){}
+  }
+  await new Promise(r=>setTimeout(r, 80));
+
+  const poster = document.getElementById('poster');
+  const top = poster.querySelector('.poster-top');
+  const footer = poster.querySelector('.poster-footer');
+  const blocks = Array.from(poster.querySelectorAll('.day-block'));
+  const PW = 840;
+  const BG = [242,247,250];
+  const { jsPDF } = window.jspdf;
+  let pdf = null;
+
+  for(let i=0;i<blocks.length;i++){
+    setPdfStatus(`Gerando PDF… página ${i+1} de ${blocks.length}`);
+    await new Promise(r=>setTimeout(r, 20));
+
+    const els = [];
+    if(i===0) els.push(top);
+    els.push(blocks[i]);
+    if(i===blocks.length-1 && footer) els.push(footer);
+
+    const caps = [];
+    for(const el of els) caps.push(await captureEl(el));
+    const totalH = caps.reduce((sum,c)=> sum + c.h, 0) + (i===0 ? 24 : 0);
+    const pageH = Math.max(totalH, 560);
+    const orient = pageH > PW ? 'p' : 'l';
+
+    if(!pdf){
+      pdf = new jsPDF({orientation:orient, unit:'px', format:[PW,pageH], hotfixes:['px_scaling'], compress:true});
+    } else {
+      pdf.addPage([PW,pageH], orient);
+    }
+    pdf.setFillColor(BG[0],BG[1],BG[2]);
+    pdf.rect(0,0,PW,pageH,'F');
+
+    let y = 0;
+    caps.forEach((c,idx)=>{
+      pdf.addImage(c.canvas.toDataURL('image/jpeg',0.95), 'JPEG', 0, y, PW, c.h, undefined, 'FAST');
+      y += c.h;
+      if(i===0 && idx===0) y += 24;
+    });
+  }
+
+  pdf.setProperties({ title:'Infoaula - Agenda da Aula do Seminário', subject:'Infoaula Semanal' });
+  const blob = pdf.output('blob');
+  cachedPdf = { blob, filename: buildFilename() };
+  return cachedPdf;
+}
+
+async function getPdf(){
+  if(cachedPdf) return cachedPdf;
+  if(pdfBusy) return null;
+  pdfBusy = true;
+  setBusy(true);
+  try{
+    const res = await buildPdf();
+    const mb = (res.blob.size/1048576).toFixed(1);
+    setPdfStatus(`✔ PDF pronto (${mb} MB)`, true);
+    return res;
+  }catch(err){
+    console.error(err);
+    setPdfStatus('Não foi possível gerar o PDF. Verifique sua conexão e tente novamente.');
+    return null;
+  }finally{
+    pdfBusy = false;
+    setBusy(false);
+  }
+}
+
+function setBusy(on){
+  ['generateBtn','downloadBtn','shareBtn','shareOtherBtn'].forEach(id=>{
+    document.getElementById(id).disabled = on;
+  });
+}
+
+function downloadBlob(blob, filename){
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement('a');
+  link.download = filename;
+  link.href = url;
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+  setTimeout(()=>URL.revokeObjectURL(url), 4000);
+}
+
+function shareText(){
+  const periodo = formatWeekRange(
+    document.getElementById('semanaInicio').value,
+    document.getElementById('semanaFim').value
+  );
+  return 'Infoaula - Agenda da Aula do Seminário' + (periodo ? ' — ' + periodo : '');
+}
+
+function showSharePanel(text){
+  const t = encodeURIComponent(text);
+  document.getElementById('shareLinks').innerHTML = `
+    <a href="https://wa.me/?text=${t}" target="_blank" rel="noopener">WhatsApp</a>
+    <a href="https://t.me/share/url?url=%20&text=${t}" target="_blank" rel="noopener">Telegram</a>
+    <a href="https://www.facebook.com/" target="_blank" rel="noopener">Facebook</a>
+    <a href="https://www.instagram.com/direct/inbox/" target="_blank" rel="noopener">Instagram</a>
+    <a href="mailto:?subject=${encodeURIComponent('Infoaula - Agenda da Aula do Seminário')}&body=${t}">E-mail</a>`;
+  document.getElementById('sharePanel').classList.add('show');
+}
+
+async function sharePdf(kind){
+  document.getElementById('sharePanel').classList.remove('show');
+  const hadCache = !!cachedPdf;
+  const res = await getPdf();
+  if(!res) return;
+
+  const text = shareText();
+  const file = new File([res.blob], res.filename, {type:'application/pdf'});
+
+  if(navigator.canShare && navigator.canShare({files:[file]})){
+    try{
+      await navigator.share({ files:[file], title:'Infoaula - Agenda da Aula do Seminário', text });
+      return;
+    }catch(err){
+      if(err && err.name === 'AbortError') return;       // a pessoa cancelou
+      if(!hadCache && err && err.name === 'NotAllowedError'){
+        // alguns celulares exigem um novo toque depois de gerar o arquivo
+        setPdfStatus('✔ PDF pronto — toque novamente no botão de compartilhar.', true);
+        return;
+      }
+      console.log('Compartilhamento falhou', err);
+    }
+  }
+
+  // Alternativa quando o navegador não compartilha arquivos (ex.: computador)
+  downloadBlob(res.blob, res.filename);
+  if(kind === 'whatsapp'){
+    window.open('https://wa.me/?text=' + encodeURIComponent(text), '_blank');
+    alert('O PDF foi baixado. Agora é só anexá-lo na conversa do WhatsApp (📎 → Documento).');
+  } else {
+    showSharePanel(text);
+  }
+}
+
+document.getElementById('generateBtn').addEventListener('click', async ()=>{
+  cachedPdf = null;
+  await getPdf();
+});
+
+document.getElementById('downloadBtn').addEventListener('click', async ()=>{
+  const res = await getPdf();
+  if(res) downloadBlob(res.blob, res.filename);
+});
+
+document.getElementById('shareBtn').addEventListener('click', ()=> sharePdf('whatsapp'));
+document.getElementById('shareOtherBtn').addEventListener('click', ()=> sharePdf('other'));
+
+document.getElementById('btnSalvar').addEventListener('click', ()=>{
+  baixarEstadoComoArquivo();
+});
+
+document.getElementById('btnAbrir').addEventListener('click', ()=>{
+  if(hasUnsavedChanges && !confirm('Você tem alterações não salvas. Se abrir outro arquivo agora, elas serão perdidas. Deseja continuar?')){
+    return;
+  }
+  document.getElementById('fileInput').click();
+});
+
+document.getElementById('fileInput').addEventListener('change', (e)=>{
+  const file = e.target.files[0];
+  if(!file) return;
+  abrirArquivoSalvo(file);
+  e.target.value = '';
+});
+
+document.getElementById('btnNovo').addEventListener('click', ()=>{
+  if(hasUnsavedChanges && !confirm('Você tem alterações não salvas. Deseja começar um formulário novo em branco mesmo assim?')){
+    return;
+  }
+  loadFormState({});
+  DAYS.forEach(day=>{
+    const container = document.getElementById('container_'+day.key);
+    if(container) container.classList.remove('disabled-fields');
+  });
+  hasUnsavedChanges = false;
+  updateToolbarStatus('novo');
+});
+
+window.addEventListener('beforeunload', function(e){
+  if(hasUnsavedChanges){
+    e.preventDefault();
+    e.returnValue = '';
+  }
+});
+
+</script>
+</body>
+</html>
